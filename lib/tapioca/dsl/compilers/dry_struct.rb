@@ -4,10 +4,12 @@
 begin
   require "dry-types"
   require "dry-struct"
-  require "dry-mondads"
+  require "dry-monads"
 rescue LoadError
   return
 end
+
+require "tapioca/dsl/helpers/dry_schema_ast_helper"
 
 module Tapioca
   module Dsl
@@ -56,7 +58,7 @@ module Tapioca
                 self.class.to_sorbet_type(attribute_info[:type], attribute_info[:required])
               end
               klass.create_method(
-                attribute_info[:name],
+                attribute_info[:name].to_s,
                 return_type: sorbet_type,
               )
             end
