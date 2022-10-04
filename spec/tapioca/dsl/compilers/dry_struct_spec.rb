@@ -376,6 +376,104 @@ module Tapioca
 
             assert_equal(expected, rbi_for(:ExampleBuiltin))
           end
+
+          it "generates correct RBI file for adbanced types" do
+            add_ruby_file("example_adbanced.rb", <<~RUBY)
+              class ExampleAdbanced < ::Dry::Struct
+                Dry::Types.load_extensions(:maybe)
+                Dry::Types.load_extensions(:monads)
+
+                module Types
+                  include ::Dry.Types()
+                end
+
+                class Fooo < ::Dry::Struct
+                  attribute :string, Types::String
+                end
+
+                attribute? :attr01, Types.Instance(Fooo)
+                attribute? :attr02, Types.Instance(::Range)
+                attribute? :attr03, Types.Instance(::Set)
+
+                attribute? :attr04, Types.Constructor(Fooo)
+                attribute? :attr05, Types.Constructor(::Range)
+                attribute? :attr06, Types.Constructor(::Set)
+
+                attribute? :attr07, Types.Interface(:call).optional
+
+                attribute? :attr08, Types::Hash.schema(name: Types::String, age: Types::Coercible::Integer)
+
+                attribute  :attr09, Types::Nil | Types::String | Types::Integer
+                attribute  :attr10, Types::Nil | Types.Array(Types::String) | Types.Array(Types::Integer)
+
+                attribute  :attr11, Types.Array(Types::String)
+                attribute? :attr12, Types.Array(Types::String)
+                attribute? :attr13, Types.Array(Types::String.optional)
+                attribute  :attr14, Types.Array(Fooo)
+                attribute  :attr15, Types.Array(Types.Constructor(Fooo))
+                attribute  :attr16, Types.Array(Types::Nil | Types::String | Types::Integer)
+                attribute  :attr17, Types.Array(Types.Array(Types::Nil | Types::String | Types::Integer))
+              end
+            RUBY
+
+            expected = <<~RBI
+              # typed: strong
+
+              class ExampleAdbanced
+                sig { returns(::T.nilable(::ExampleAdbanced::Fooo)) }
+                def attr01; end
+
+                sig { returns(::T.nilable(::T::Range[::T.untyped])) }
+                def attr02; end
+
+                sig { returns(::T.nilable(::T::Set[::T.untyped])) }
+                def attr03; end
+
+                sig { returns(::T.nilable(::ExampleAdbanced::Fooo)) }
+                def attr04; end
+
+                sig { returns(::T.nilable(::T::Range[::T.untyped])) }
+                def attr05; end
+
+                sig { returns(::T.nilable(::T::Set[::T.untyped])) }
+                def attr06; end
+
+                sig { returns(::T.untyped) }
+                def attr07; end
+
+                sig { returns(::T.nilable(::T::Hash[::T.untyped, ::T.untyped])) }
+                def attr08; end
+
+                sig { returns(::T.nilable(::T.any(::String, ::Integer))) }
+                def attr09; end
+
+                sig { returns(::T.nilable(::T.any(::T::Array[::String], ::T::Array[::Integer]))) }
+                def attr10; end
+
+                sig { returns(::T::Array[::String]) }
+                def attr11; end
+
+                sig { returns(::T.nilable(::T::Array[::String])) }
+                def attr12; end
+
+                sig { returns(::T.nilable(::T::Array[::T.nilable(::String)])) }
+                def attr13; end
+
+                sig { returns(::T::Array[::ExampleAdbanced::Fooo]) }
+                def attr14; end
+
+                sig { returns(::T::Array[::ExampleAdbanced::Fooo]) }
+                def attr15; end
+
+                sig { returns(::T::Array[::T.nilable(::T.any(::String, ::Integer))]) }
+                def attr16; end
+
+                sig { returns(::T::Array[::T::Array[::T.nilable(::T.any(::String, ::Integer))]]) }
+                def attr17; end
+              end
+            RBI
+            assert_equal(expected, rbi_for(:ExampleAdbanced))
+          end
         end
       end
     end
